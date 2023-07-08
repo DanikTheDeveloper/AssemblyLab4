@@ -1,0 +1,20 @@
+,(ONLY MODIFY THIS COLUMN),,,,,,,
+LAB Group:,,,,,EXAMPLE:,LAB Group:,LA0X-0X,
+Student A Comp ID:,,,,,,Student A Comp ID:,ksl24,
+Student B Comp ID:,,,,,,Student B Comp ID:,dst5,
+Test syn1_1L (17 points),,,,,,Test syn1_1L (17 points),A,"`-> ksl24 was responsible for this, because ksl24 is Student A"
+Test syn1_1F (17 points),,,,,,Test syn1_1F (17 points),B,"`-> dst5 was responsible for this, because dst5 is Student B"
+Test syn1_2L (17 points),,,,,,Test syn1_2L (17 points),A,
+Test syn1_2F (17 points),,,,,,Test syn1_2F (17 points),B,
+Test syn2L (11 points),,,,,,Test syn2L (22 points),A,
+Test syn2F (11 points),,,,,,Test syn2F (22 points),B,
+Test syn3L (15 points),,,,,,Test syn3L (15 points),A,
+Test syn3F (15 points),,,,,,Test syn3F (15 points),AB,`-> Both ksl24 and dst5 were responsible for this (50/50)
+Test syn4L (29 points),,,,,,Test syn4L (29 points),AB,`-> Both ksl24 and dst5 were responsible for this (50/50)
+Test syn4F (29 points),,,,,,Test syn4F (29 points),A,
+Test syn5L (24 points),,,,,,Test syn5L (24 points),B,
+Test syn5F (24 points),,,,,,Test syn5F (24 points),A,
+Test real1_L (45 points),,,,,,Test real1_L (45 points),B,
+Test real1_F (45 points),,,,,,Test real1_F (45 points),A,
+Test real2_L (45 points),,,,,,Test real2_L (45 points),B,
+Test real2_L (45 points),,,,,,Test real2_L (45 points),A,
