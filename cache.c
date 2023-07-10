@@ -41,8 +41,38 @@ void print_result(result r) {
  *             address in the return "result" struct. Update miss_count and eviction_count.
  */
 result operateCache(const unsigned long long address, Cache *cache) {
-  /* YOUR CODE HERE */
+  
   result r;
+
+  // Increment the global lru_clock for the corresponding set.
+  unsigned long long setIndex = cache_set(address, cache);
+  cache->sets[setIndex].lru_clock++;
+
+  // Check if the address is in the cache.
+  if (probe_cache(address, cache)) {
+    // If the address is in the cache, it's a hit.
+    hit_cacheline(address, cache);
+    r.status = CACHE_HIT;
+    cache->hit_count++;
+  } else {
+    // If the address is not in the cache, it's a miss.
+    if (insert_cacheline(address, cache)) {
+      // If we could insert the address into an empty line, it's a simple miss.
+      r.status = CACHE_MISS;
+      r.insert_block_addr = address_to_block(address, cache);
+      cache->miss_count++;
+    } else {
+      // If we could not insert the address because there was no empty line,
+      // we need to evict a line.
+      unsigned long long victim_block_addr = victim_cacheline(address, cache);
+      replace_cacheline(victim_block_addr, address, cache);
+      r.status = CACHE_EVICT;
+      r.victim_block_addr = victim_block_addr;
+      r.insert_block_addr = address_to_block(address, cache);
+      cache->miss_count++;
+      cache->eviction_count++;
+    }
+  }
   return r;
 }
 
@@ -73,9 +103,26 @@ unsigned long long cache_set(const unsigned long long address,
 
 // Check if the address is found in the cache. If so, return true. else return false.
 bool probe_cache(const unsigned long long address, const Cache *cache) {
-  /* YOUR CODE HERE */
+  // Extract the block address, set index, and tag from the given address
+  unsigned long long blockAddress = address_to_block(address, cache);
+  unsigned long long setIndex = cache_set(blockAddress, cache);
+  unsigned long long tag = cache_tag(blockAddress, cache);
+
+  // Get the corresponding set from the cache
+  Set *set = &cache->sets[setIndex];
+
+  // Check each line in the set
+  for (int i = 0; i < cache->linesPerSet; ++i) {
+    // If the line is valid and its tag matches the given tag, return true
+    if (set->lines[i].valid && set->lines[i].tag == tag) {
+      return true;
+    }
+  }
+
+  // If no match was found, return false
   return false;
 }
+
 
 // Access address in cache. Called only if probe is successful.
 // Update the LRU (least recently used) or LFU (least frequently used) counters.
