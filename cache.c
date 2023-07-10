@@ -51,22 +51,24 @@ result operateCache(const unsigned long long address, Cache *cache) {
 // i.e., byte offset bits are cleared to 0
 unsigned long long address_to_block(const unsigned long long address,
                                 const Cache *cache) {
-  /* YOUR CODE HERE */
-  return 0;
+  unsigned long long blockOffsetMask = (1 << cache->blockBits) - 1;
+  return address & ~blockOffsetMask;
 }
 
 // Return the cache tag of an address
 unsigned long long cache_tag(const unsigned long long address,
                              const Cache *cache) {
-  /* YOUR CODE HERE */
-  return 0;
+  unsigned long long blockOffsetMask = (1 << cache->blockBits) - 1;
+  unsigned long long setIndexMask = ((1 << (cache->setBits + cache->blockBits)) - 1) & ~blockOffsetMask;
+  return (address & ~setIndexMask) >> (cache->blockBits + cache->setBits);
 }
 
 // Return the cache set index of the address
 unsigned long long cache_set(const unsigned long long address,
                              const Cache *cache) {
-  /* YOUR CODE HERE */
-  return 0;
+  unsigned long long blockOffsetMask = (1 << cache->blockBits) - 1;
+  unsigned long long setIndexMask = ((1 << (cache->setBits + cache->blockBits)) - 1) & ~blockOffsetMask;
+  return (address & setIndexMask) >> cache->blockBits;
 }
 
 // Check if the address is found in the cache. If so, return true. else return false.
