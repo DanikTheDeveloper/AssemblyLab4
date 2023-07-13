@@ -141,8 +141,27 @@ void hit_cacheline(const unsigned long long address, Cache *cache){
  * Otherwise, it returns false.  
  */ 
 bool insert_cacheline(const unsigned long long address, Cache *cache) {
-  /* YOUR CODE HERE */
-   return false;
+
+  unsigned long long blockAddress = address_to_block(address, cache);
+  unsigned long long setIndex = cache_set(blockAddress, cache); 
+  
+  Line* castedBlockAddress = (Line*)&blockAddress;
+  // Get the corresponding set from the cache
+  Set *set = &cache->sets[setIndex];
+  
+  // Check each line in the set
+  for (int i = 0; i < cache->linesPerSet; ++i) {
+    // If the line is valid, insert the address and update lru (global and instance) and return true and initialize access counter. Otherwise, return false
+    if (!set->lines[i].valid) {
+    	set->lines[i] = *castedBlockAddress; //needs fix
+    	set->lines[i].lru_clock = cache->sets[setIndex].lru_clock;
+    	set->lines[i].access_counter = 0;
+    	return true;
+    }
+    else { 
+    	return false;
+    }
+  } 
 }
 
 // If there is no empty cacheline, this method figures out which cacheline to replace
@@ -168,12 +187,14 @@ void replace_cacheline(const unsigned long long victim_block_addr,
 // and initialize the cache sets and lines.
 // Initialize the cache name to the given name 
 void cacheSetUp(Cache *cache, char *name) {
-  /* YOUR CODE HERE */
+  cache->name = name;
+  Set *sets = (Set*) malloc(cache->setBits * sizeof(Set));
+  Line *lines = (Line*) malloc(cache->linesPerSet* sizeof(Line));
 }
 
 // deallocate the memory space for the cache
 void deallocate(Cache *cache) {
-  /* YOUR CODE HERE */
+  free(cache);
 }
 
 // print out summary stats for the cache
