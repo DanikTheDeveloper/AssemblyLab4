@@ -127,7 +127,20 @@ bool probe_cache(const unsigned long long address, const Cache *cache) {
 // Access address in cache. Called only if probe is successful.
 // Update the LRU (least recently used) or LFU (least frequently used) counters.
 void hit_cacheline(const unsigned long long address, Cache *cache){
-  /* YOUR CODE HERE */
+  unsigned long long blockAddress = address_to_block(address, cache);
+  unsigned long long setIndex = cache_set(blockAddress, cache);
+  unsigned long long tag = cache_tag(blockAddress, cache);
+
+  Set *set = &cache->sets[setIndex];
+
+  // Iterate over the cache lines in the set
+  for (int i = 0; i < cache->linesPerSet; ++i) {
+    if (set->lines[i].valid && set->lines[i].tag == tag) {
+      set->lines[i].lru_clock = set->lru_clock;  // update the lru_clock of the cache line
+      set->lines[i].access_counter++;             // increment the access_counter of the cache line
+      break;
+    }
+  }
  }
 
 /* This function is only called if probe_cache returns false, i.e., the address is
@@ -169,8 +182,19 @@ bool insert_cacheline(const unsigned long long address, Cache *cache) {
 // of the victim cacheline; note we no longer have access to the full address of the victim
 unsigned long long victim_cacheline(const unsigned long long address,
                                 const Cache *cache) {
-  /* YOUR CODE HERE */
-   return 0;
+  unsigned long long blockAddress = address_to_block(address, cache);
+  unsigned long long setIndex = cache_set(blockAddress, cache);
+
+  Set *set = &cache->sets[setIndex];
+  int victim_line = 0;
+
+  // Here we use LRU policy to find the victim cache line to replace.
+  for (int i = 1; i < cache->linesPerSet; ++i) {
+    if (set->lines[i].lru_clock < set->lines[victim_line].lru_clock) {
+      victim_line = i;
+    }
+  }
+  return set->lines[victim_line].tag;
 }
 
 /* Replace the victim cacheline with the new address to insert. Note for the victim cachline,
@@ -180,7 +204,20 @@ unsigned long long victim_cacheline(const unsigned long long address,
  */
 void replace_cacheline(const unsigned long long victim_block_addr,
 		       const unsigned long long insert_addr, Cache *cache) {
-  /* YOUR CODE HERE */
+  unsigned long long blockAddress = address_to_block(insert_addr, cache);
+  unsigned long long setIndex = cache_set(blockAddress, cache);
+  unsigned long long tag = cache_tag(blockAddress, cache);
+
+  Set *set = &cache->sets[setIndex];
+
+  for (int i = 0; i < cache->linesPerSet; ++i) {
+    if (set->lines[i].valid && set->lines[i].tag == victim_block_addr) {
+      set->lines[i].tag = tag;                            // replace the block address of the victim cache line
+      set->lines[i].lru_clock = set->lru_clock;           // update the lru_clock of the new cache line
+      set->lines[i].access_counter = 0;                   // initiate the access_counter of the new cache line
+      break;
+    }
+  }
 }
 
 // allocate the memory space for the cache with the given cache parameters
