@@ -222,13 +222,34 @@ void replace_cacheline(const unsigned long long victim_block_addr,
 // and initialize the cache sets and lines.
 // Initialize the cache name to the given name 
 void cacheSetUp(Cache *cache, char *name) {
+  // Set the cache name
   cache->name = name;
+
+  // Allocate memory for the cache sets
   cache->sets = (Set*) malloc((1 << cache->setBits) * sizeof(Set));
+
+  // Initialize each cache set and its lines
   for (int i = 0; i < (1 << cache->setBits); ++i) {
+    // Allocate memory for the cache lines in the current set
     cache->sets[i].lines = (Line*) malloc(cache->linesPerSet * sizeof(Line));
+
+    // Clear the memory of the cache lines
     memset(cache->sets[i].lines, 0, cache->linesPerSet * sizeof(Line));
+
+    // Initialize the cache lines in the current set
+    for (int j = 0; j < cache->linesPerSet; ++j) {
+      cache->sets[i].lines[j].valid = false;          // Set the valid bit to false
+      cache->sets[i].lines[j].block_addr = 0;         // Set the block address to 0
+      cache->sets[i].lines[j].tag = 0;                // Set the tag to 0
+      cache->sets[i].lines[j].lru_clock = 0;          // Set the LRU clock to 0
+      cache->sets[i].lines[j].access_counter = 0;     // Set the access counter to 0
+    }
+
+    // Initialize the global LRU clock for the current set to 0
+    cache->sets[i].lru_clock = 0;
   }
 }
+
 
 // deallocate the memory space for the cache
 void deallocate(Cache *cache) {
