@@ -154,27 +154,25 @@ void hit_cacheline(const unsigned long long address, Cache *cache){
  * Otherwise, it returns false.  
  */ 
 bool insert_cacheline(const unsigned long long address, Cache *cache) {
-
   unsigned long long blockAddress = address_to_block(address, cache);
   unsigned long long setIndex = cache_set(blockAddress, cache); 
+  unsigned long long tag = cache_tag(blockAddress, cache);
   
-  Line* castedBlockAddress = (Line*)&blockAddress;
   // Get the corresponding set from the cache
   Set *set = &cache->sets[setIndex];
   
   // Check each line in the set
   for (int i = 0; i < cache->linesPerSet; ++i) {
-    // If the line is valid, insert the address and update lru (global and instance) and return true and initialize access counter. Otherwise, return false
+    // If the line is not valid, insert the address and update lru (global and instance) and return true and initialize access counter.
     if (!set->lines[i].valid) {
-    	set->lines[i] = *castedBlockAddress; //needs fix
+    	set->lines[i].tag = tag; 
+    	set->lines[i].valid = true;
     	set->lines[i].lru_clock = cache->sets[setIndex].lru_clock;
     	set->lines[i].access_counter = 0;
     	return true;
     }
-    else { 
-    	return false;
-    }
   } 
+  return false;
 }
 
 // If there is no empty cacheline, this method figures out which cacheline to replace
@@ -225,12 +223,19 @@ void replace_cacheline(const unsigned long long victim_block_addr,
 // Initialize the cache name to the given name 
 void cacheSetUp(Cache *cache, char *name) {
   cache->name = name;
-  Set *sets = (Set*) malloc(cache->setBits * sizeof(Set));
-  Line *lines = (Line*) malloc(cache->linesPerSet* sizeof(Line));
+  cache->sets = (Set*) malloc((1 << cache->setBits) * sizeof(Set));
+  for (int i = 0; i < (1 << cache->setBits); ++i) {
+    cache->sets[i].lines = (Line*) malloc(cache->linesPerSet * sizeof(Line));
+    memset(cache->sets[i].lines, 0, cache->linesPerSet * sizeof(Line));
+  }
 }
 
 // deallocate the memory space for the cache
 void deallocate(Cache *cache) {
+  for (int i = 0; i < (1 << cache->setBits); ++i) {
+    free(cache->sets[i].lines);
+  }
+  free(cache->sets);
   free(cache);
 }
 
