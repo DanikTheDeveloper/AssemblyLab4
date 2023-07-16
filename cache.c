@@ -182,20 +182,17 @@ unsigned long long victim_cacheline(const unsigned long long address,
                                 const Cache *cache) {
   unsigned long long blockAddress = address_to_block(address, cache);
   unsigned long long setIndex = cache_set(blockAddress, cache);
+
   Set *set = &cache->sets[setIndex];
+  int victim_line = 0;
 
-  unsigned long long lru = set->lines[0].lru_clock;
-  int victim_line_index = 0;
-
-  // Iterate over the cache lines in the set to find the one with the oldest lru_clock
-  for (int i = 0; i < cache->linesPerSet; ++i) {
-    if (set->lines[i].lru_clock < lru) {
-      lru = set->lines[i].lru_clock;
-      victim_line_index = i;
+  // Here we use LRU policy to find the victim cache line to replace.
+  for (int i = 1; i < cache->linesPerSet; ++i) {
+    if (set->lines[i].lru_clock < set->lines[victim_line].lru_clock) {
+      victim_line = i;
     }
   }
-
-  return set->lines[victim_line_index].tag;
+  return set->lines[victim_line].tag;
 }
 
 /* Replace the victim cacheline with the new address to insert. Note for the victim cachline,
@@ -211,13 +208,11 @@ void replace_cacheline(const unsigned long long victim_block_addr,
 
   Set *set = &cache->sets[setIndex];
 
-  // Iterate over the cache lines in the set
   for (int i = 0; i < cache->linesPerSet; ++i) {
-    // Replace the line with the victim tag
-    if (set->lines[i].tag == victim_block_addr) {
-      set->lines[i].tag = tag;
-      set->lines[i].lru_clock = set->lru_clock;
-      set->lines[i].access_counter = 0;
+    if (set->lines[i].valid && set->lines[i].tag == victim_block_addr) {
+      set->lines[i].tag = tag;                            // replace the block address of the victim cache line
+      set->lines[i].lru_clock = set->lru_clock;           // update the lru_clock of the new cache line
+      set->lines[i].access_counter = 0;                   // initiate the access_counter of the new cache line
       break;
     }
   }
