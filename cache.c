@@ -251,8 +251,8 @@ void deallocate(Cache *cache) {
     free(cache->sets[i].lines);
   }
   free(cache->sets);
-  free(cache);
 }
+
 
 // print out summary stats for the cache
 void printSummary(const Cache *cache) {
