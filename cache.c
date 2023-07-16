@@ -166,6 +166,7 @@ bool insert_cacheline(const unsigned long long address, Cache *cache) {
     // If the line is not valid, insert the address and update lru (global and instance) and return true and initialize access counter.
     if (!set->lines[i].valid) {
     	set->lines[i].tag = tag; 
+    	set->lines[i].block_addr = blockAddress;
     	set->lines[i].valid = true;
     	set->lines[i].lru_clock = cache->sets[setIndex].lru_clock;
     	set->lines[i].access_counter = 0;
@@ -185,14 +186,23 @@ unsigned long long victim_cacheline(const unsigned long long address,
 
   Set *set = &cache->sets[setIndex];
   int victim_line = 0;
-
-  // Here we use LRU policy to find the victim cache line to replace.
-  for (int i = 1; i < cache->linesPerSet; ++i) {
-    if (set->lines[i].lru_clock < set->lines[victim_line].lru_clock) {
-      victim_line = i;
+  if(cache->lfu == 0) {
+    // Here we use LRU policy to find the victim cache line to replace.
+    for (int i = 1; i < cache->linesPerSet; ++i) {
+      if (set->lines[i].lru_clock < set->lines[victim_line].lru_clock) {
+        victim_line = i;
+      }
     }
   }
-  return set->lines[victim_line].tag;
+  else if (cache->lfu == 1) {
+    // Here we use LFU policy to find the victim cache line to replace.
+    for (int i = 1; i < cache->linesPerSet; ++i) {
+      if (set->lines[i].access_counter < set->lines[victim_line].access_counter || ((set->lines[i].access_counter == set->lines[victim_line].access_counter) && set->lines[i].lru_clock < set->lines[victim_line].lru_clock)) {
+        victim_line = i;
+      }
+    }
+  }
+  return set->lines[victim_line].block_addr;
 }
 
 /* Replace the victim cacheline with the new address to insert. Note for the victim cachline,
@@ -209,10 +219,14 @@ void replace_cacheline(const unsigned long long victim_block_addr,
   Set *set = &cache->sets[setIndex];
 
   for (int i = 0; i < cache->linesPerSet; ++i) {
-    if (set->lines[i].valid && set->lines[i].tag == victim_block_addr) {
-      set->lines[i].tag = tag;                            // replace the block address of the victim cache line
-      set->lines[i].lru_clock = set->lru_clock;           // update the lru_clock of the new cache line
-      set->lines[i].access_counter = 0;                   // initiate the access_counter of the new cache line
+    if (set->lines[i].valid && set->lines[i].block_addr == victim_block_addr) {
+      // replace the block address of the victim cache line
+      set->lines[i].tag = tag;
+      set->lines[i].block_addr = insert_addr;                          
+      // update the lru_clock of the new cache line
+      set->lines[i].lru_clock = cache->sets[setIndex].lru_clock;
+      // initiate the access_counter of the new cache line           
+      set->lines[i].access_counter = 0;                   
       break;
     }
   }
